@@ -32,7 +32,7 @@ m_fuel = 0;          %[kg/s]  Fuel flow rate (intialized to 0 for simulation)
 lamda = 0.97;        %Nozzle efficiency 
 Pa = 101325;         %[Pa] Ambient pressure 
 R = 8314.41/29.19;   %[J/kmol*K] Universal gas constant divided by MM of combustion products
-dt = 0.2;            %[s] Differential time step to be used for each iteration
+dt = 0.1;            %[s] Differential time step to be used for each iteration
 G_tot = [];          %Initialize G_tot array to store the instantaneous G values
 
 

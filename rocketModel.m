@@ -1,108 +1,107 @@
-function [score] = rocketModel(t1D,t1T, mcT, mcF)
+function [score] = rocketModel(tD, tT, t1L, c1T, c2T, t3L, bT, fuelCore, fuelDia, fuelLength, m_ox, nozzleThroat, nozzleExit, chamberT) 
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
-% calculate thrust curve from motor parameters
-%Variables for Mini-Hybrid Prediction (comment or uncomment) 
+    dt = 0.4; %[s] integration timestep
+    altitude = zeros(1,2000);
+    velocity = zeros(1,2000);
+    acceleration = zeros(1,2000);
+    liftoff = true;
 
-finalD = t1D-t1T-mcT;     %[m]    Maximum possible diameter of the motor after completed burn 
-initialD = 0.05*finalD;  %[m]    Initial diameter of combustion port, pre-burn 
-Lp = 0.121;          %[m]    Length of the combustion port 
-m_ox = 0.0123;       %[kg/s] Oxidizer flow rate (experimentally measured)
-throatR = 0.0014;    %[m]    Radius of the nozzle throat
-exitR = 0.00455;     %[m]    Radius of the nozzle exit 
+    L = 1; %[m] nosecone length
 
-%Caclulated initial variables for simulation 
-A_t = pi*(throatR)^2; %[m^2]  Specify the nozzle throat area 
-A_e = pi*(exitR)^2;   %[m^2]  Calculate the nozzle exit area
-epsilon = A_e/A_t;    %Nozzle area expansion ratio
+    %CALCULATE MOTOR THRUST CURVE AND OPTIMAL OXIDIZER AMOUNT ALSO T2 LEN
+    thrustC = motorThrust(fuelCore, fuelDia, fuelLength, m_ox, nozzleThroat, nozzleExit)
+    burnTime = max(thrustC(:,1));
 
-rho = 975;           %[kg/m^3]  Average density of ABS plastic 
-m_fuel = 0;          %[kg/s]  Fuel flow rate (intialized to 0 for simulation)
-lamda = 0.97;        %Nozzle efficiency 
-Pa = 101325;         %[Pa] Ambient pressure 
-R = 8314.41/29.19;   %[J/kmol*K] Universal gas constant divided by MM of combustion products
-dt = 0.2;            %[s] Differential time step to be used for each iteration
-G_tot = [];          %Initialize G_tot array to store the instantaneous G values
+    oxMass = burnTime*m_ox; %[kg] optimal mass of oxidiser
 
 
-%% Begin Simulation 
-currentD = initialD; %To begin set the diameter to initial (unburnt) diameter
+    parachuteM = 2; %[kg]
+    avionicsM = 2; %[kg]
+    payloadM = 0; %[kg]
+    nozzleM = 0.5; %[kg]
 
-j = 1;
+    rhoAl = 2720; %[kg/m^3]
+    rhoABS = 1052;%[kg/m^3]
 
-while currentD < finalD
+    %OXIDIZER TANK CONSIDERATIONS
 
-%Calculate the regression rate using custom RegRate function 
-[regRate, m_fuel, G_tot(j)] = RegRate(m_ox, currentD, rho, Lp); 
- 
-%Calculate the new combustion port diameter
-currentD = currentD + 2*regRate*dt %Unmuted to check progress/speed of sim
+    rhoNoxL_20c = 743.9; %[kg/m^3] density before tank drain ~20c liquid
+    rhoNoxG_20c = 190.0; %[kg/m^3] density before tank drain ~20c vapour
 
-%Calculate the total propellant mass flow
-m_tot = m_ox + m_fuel; 
+    %Assume u = h since tank is a constant volume system
+    uNoxL_20c = -241; %[kj/kg] specific internal energy. 
+    uNoxG_20c = -94.4; %[kj/kg] specific internal energy. 
 
-%Caculate the OF ratio 
-OF_ratio(j) = m_ox/m_fuel; 
+    x = @(Utot, mTot, uVap, uLiq) ((Utot/mTot)-uLiq) / (uVap - uLiq);
+    tankVol = @(mass, xCur, rhoL, rhoG) mass * ((1-xCur)/rhoL + xCur/rhoL);
 
-%Using the OF ratio, consult paper
-%https://pdfs.semanticscholar.org/a15a/a1b29fffeebfcdb70965e4241af07eb5f00f.pdf
-%to get the characteristic velocity for this OF ratio OR use RPA and derive
-%them all yourself (this is a good way to do it) and it will also yield the
-%flame temp, ratio of specific heats, and molecular mass of the
-%combustion products
+    % Assuming ~100% tank fill with liquid at startup Utot = uLiq*mTot
+    xT0 = x(oxMass*uNoxL_20c, oxMass, uNoxG_20c, uNoxL_20c);
+    vol = tankVol(oxMass, xT0, rhoNoxL_20c, rhoNoxG_20c);
 
-%Values from RPA for research paper (uncomment or comment)
-c_star = 1605;      %[m/s] 
-gamma = 1.1708;     %Ratio of specific heats (Cp and Cv idk which order) from RPA
-molMass = 0.002919; %[kg/mol] Average molar mass of the output exhaust
-Tc = 3301.8;        %[K] Flame temperature (also used as combustion chamber stagnation temp)
- 
-%Values from RPA for mini-hybrid  (uncomment or comment)
-% c_star = 1559;      %[m/s] 
-% gamma = 1.2015;     %Ratio of specific heats (Cp and Cv idk which order) from RPA
-% molMass = 0.002992; %[kg/mol] Average molar mass of the output exhaust
-% Tc = 3321.8;        %[K] Flame temperature (also used as combustion chamber stagnation temp)
+    volBh = 2*(4/24)*pi*(tD-2*bT)^3; %Volume added by the two bulkheads
+    lOx = ((vol-volBh) / ((tD-2*tT)^2 * (pi/4))); %[m] length of the ox tank in meters
+    t2L = lOx + 2*tD; %[m] length of entire tube 2 (accounting for coupling)
 
-%Calcualte the pressure in combustion chamber in Pascals and PSI
-pressure_Chamber_Pa(j) =  c_star*m_tot/A_t; %[Pa]
-Pc(j) = pressure_Chamber_Pa(j); 
-pressure_Chamber_PSI = pressure_Chamber_Pa(j)*0.000145038; %[PSI]
-
-%Calcualte the exit Mach number, to do so use eqn 3.100 from SPAD
-%(Humble)and solve it numerically 
-syms x
-Me = double(vpasolve(epsilon^(2*(gamma-1)/(gamma+1)) == (2/(1+gamma))*...
-    (x)^(-2*(gamma-1)/(gamma+1)) + ((gamma-1)/2)*x^(2*(1-...
-    ((gamma-1)/(gamma+1)))), x)); 
-
-%Calculate the exit pressure, use eqn 3.95 from SPAD (Humble), with the
-%previously determined chamber pressure as the stagnation pressure 
-Pe = Pc(j)*(1+((gamma-1)/2)*Me^2)^-(gamma/(gamma-1)); %[Pa]
-
-%Calculate the exit exhaust temperature to determine the exit velocity,
-%given by eqn 3.94 from SPAD (Humble)
-Te = ((1 + (((gamma-1)/2)*Me^2))^-1)*Tc; 
-
-%Caclualte the exit velocity using eqn 3.112 from SPAD (Humble), using the 
-%exit temperature from above
-Ve = sqrt(((2*gamma*R*Te)/(gamma-1))*(1-(Pe/Pc(j)))^((gamma-1)/gamma)); %[m/s]
-
-%Now calculate the theoretical thrust of the motor using eqn 1.6 from SPAD
-thrust(j) = lamda*(m_tot*Ve + (Pe-Pa)*A_e); %[N]
-
-if j == 1
-    time(j) = 0; %Ensure simulation starts at t=0
-else
-    time(j) = time(j-1) + dt;
-end
-
-j = j+1; 
-end
+    %END OF OXIDIZER TANK CONSIDERATIONS
 
 
+    %AERODYNAMICS CONSIDERATIONS
+    cD = 0.5; %Drag coeffecient, to be replaced later with better estimates
+    drag = @(D, rho, v) rho*v^2*(1/2)*(pi/4)*D^2;
+    %END OF AERODYNAMICS CONSIDERATIONS
 
+    %MASS CONSIDERATIONS
+    tubeMass = @(D, T, L) (1/4)*pi*(D^2 - (D-2*T)^2)*L *rhoAl;
+    bulkheadMass = (4/24)*pi*(tD^3 - (tD-2*bT)^3)*rhoAl;
+    noseconeMass = ((pi*L)/12) *(tD^2 - (tD-2*tT)^2)*rhoAl;
 
+    t1M = tubeMass(tD, tT, t1L);
+    t2M = tubeMass(tD, tT, t2L);
+    t3M = tubeMass(tD, tT, t3L);
+
+    c1M = tubeMass(tD-2*tT, c1T, 2*tD);
+    c2M = tubeMass(tD-2*tT, c2T, 2*tD);
+
+    chamberM = tubeMass(fuelDia, chamberT, fuelLength);
+    fuelM = (1/4)*pi*(fuelDia^2 - fuelCore^2)*fuelLength*rhoABS;
+
+    dryMass = t1M + t2M + t3M + c1M + c2M + chamberM + noseconeMass + payloadM...
+        + avionicsM + parachuteM + bulkheadMass*2 + nozzleM %calculate mechanical weight
+
+    wetMass = dryMass + oxMass + fuelM %calculate the fully loaded weight of the craft
+    
+    %BEGIN TIME LOOP%
+    i = 2;
+    while(velocity(i)>=0 && liftoff==true)
+
+        
+        if(dt*i > burnTime)
+            motorForce = 0;
+            mCur = dryMass;
+        else
+            motorForce = interp1(thrustC(:,1), thrustC(:,2), dt*i);
+            mCur = wetMass - m_ox*dt*i - interp1(thrustC(:,1), thrustC(:,3), dt*i) %estimate the current mass of the rocket where t = dt*i
+        end
+
+        %---<UPDATE POSITION>---%
+        acceleration(i) = (motorForce - drag(tD, 1.2, velocity(i-1)) - mCur*9.81)/mCur;
+        if(acceleration(i)>0)
+            liftoff = false;
+        end
+        velocity(i) = velocity(i-1) + acceleration(i)*dt;
+        altitude(i) = altitude(i-1) + velocity(i)*dt;
+        acceleration(i);
+        i = i + 1;
+        if(i>2000)
+            break
+        end
+    end
+    %END TIME LOOP%
+    
+    score = acceleration;
 
 end
 
