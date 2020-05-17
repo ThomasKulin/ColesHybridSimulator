@@ -2,7 +2,7 @@ function [score] = rocketModel(input)
 %ROCKET MODEL -> Hybrid rocket simulation software
 %   This function takes various parameters and models the flight of a
 %   hybrid rocket from them. The input parameters are as follows.
-
+    input
     tD = input(1); %Outer diameter of the rocket 
     tT = input(2); %Tube thickness of the rocker
     t1L = input(3); %Length of tube 1, (Avionics and recovery)
@@ -40,7 +40,7 @@ function [score] = rocketModel(input)
 
     %CALCULATE MOTOR THRUST CURVE AND OPTIMAL OXIDIZER AMOUNT ALSO T2 LEN
     thrustC = motorThrust(fuelCore, fuelDia, fuelLength, m_ox, nozzleThroat, nozzleExit, dt);
-    burnTime = max(thrustC(:,1));
+    burnTime = max(thrustC(:,1))
 
     oxMass = burnTime*m_ox; %[kg] optimal mass of oxidiser
 
@@ -118,12 +118,14 @@ function [score] = rocketModel(input)
             motorForce = 0;
             mCur = dryMass;
         else
-            motorForce = thrustC(i,2)
+            motorForce = thrustC(i,2);
             mCur = wetMass - m_ox*dt*i - thrustC(i,3); %estimate the current mass of the rocket where t = dt*i
         end
-
+        
         %---<UPDATE POSITION>---%
         acceleration(i) = (motorForce - drag(tD, airDensity, velocity(i-1)) - mCur*9.81)/mCur;
+
+        
         if(acceleration(i)>0)
             liftoff = false;
         end
@@ -181,7 +183,7 @@ function [score] = rocketModel(input)
     end
     max(altitude)
     plot(acceleration(1:500))
-    plot(thrustC(1:500,2))
+    %plot(thrustC(1:500,2))
     %printf("MAX ALTITUDE - > %d m", max(altitude));
     %---<SCORE COMPUTED>---%
 
