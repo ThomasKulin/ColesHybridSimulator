@@ -1,4 +1,4 @@
-function output = motorThrust(initialD,finalD, Lp, m_ox, throatR, exitR)
+function output = motorThrust(initialD,finalD, Lp, m_ox, throatR, exitR, dt)
 
     % Variables for Comparison to Research Paper (comment or uncomment)
     %https://pdfs.semanticscholar.org/b004/f9574f56c810273f5bbf7e494ad3598abdae.pdf
@@ -21,12 +21,13 @@ function output = motorThrust(initialD,finalD, Lp, m_ox, throatR, exitR)
     lamda = 0.97;        %Nozzle efficiency 
     Pa = 101325;         %[Pa] Ambient pressure 
     R = 8314.41/29.19;   %[J/kmol*K] Universal gas constant divided by MM of combustion products
-    dt = 1;              %[s] Differential time step to be used for each iteration
     G_tot = [];          %Initialize G_tot array to store the instantaneous G values
     
-    time = zeros(1,200);
-    thrust = zeros(1,200);
-    mBurned = zeros(1,200);
+    time = zeros(1,500);
+    thrust = zeros(1,500);
+    mBurned = zeros(1,500);
+    Pc = zeros(1, 500);
+    pressure_Chamber_Pa = zeros(1, 500);
 
 
     %% Begin Simulation 
@@ -109,6 +110,6 @@ function output = motorThrust(initialD,finalD, Lp, m_ox, throatR, exitR)
     j = j+1; 
     end 
     
-    output = [time', thrust', mBurned']; %return a single matrix of time and thrust
+    output = [time', thrust', mBurned', Pc']; %return a single matrix of time and thrust
 end
 

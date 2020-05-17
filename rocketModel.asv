@@ -111,14 +111,14 @@ function [score] = rocketModel(input)
     
     %BEGIN TIME LOOP%
     i = 2;
-    while(i<500)
+    while(i<200)
 
         
         if(dt*i > burnTime)
             motorForce = 0;
             mCur = dryMass;
         else
-            motorForce = thrustC(i,2)
+            motorForce = thrustC(i,2);
             mCur = wetMass - m_ox*dt*i - thrustC(i,3); %estimate the current mass of the rocket where t = dt*i
         end
 
@@ -132,8 +132,8 @@ function [score] = rocketModel(input)
         altitude(i) = altitude(i-1) + velocity(i)*dt;
         
         if(altitude(i) < 11000) %TROPOSPHERE
-            externalTemp = 15.04 - 0.00649*altitude(i);
-            externalPres = 101.29 * ((externalTemp + 273.1)/288.08)^5.256;
+            externalTemp = 15.04 - 0.0649*altitude(i)
+            externalPres = 101.29 * ((externalTemp + 273.1)/288.08)^5.256
             airDensity = externalPres/(0.28705*(externalTemp + 273));
             
         elseif(altitude(i) >= 11000 && altitude(i) < 25000) %STRATOSPHERE (LOWER)
@@ -146,6 +146,7 @@ function [score] = rocketModel(input)
             externalPres = 2.488 * ( (externalTemp+273.1)/216.6)^(-11.388);
             airDensity = externalPres/(0.28705*(externalTemp + 273));
         end
+        altitude(i)
         
         %---<CALCULATE STRESSES>---%
         stressXt1(i) = (((noseconeMass + parachuteM + t1M + payloadM)*(acceleration(i))) + drag(tD, 1.2, velocity(i))) / ((pi/4)*(tD^2 - (tD-tT)^2)); %calculate stress on tube due to mass acceleration and nosecone drag
@@ -180,8 +181,6 @@ function [score] = rocketModel(input)
         "failure not expected"
     end
     max(altitude)
-    plot(acceleration(1:500))
-    plot(thrustC(1:500,2))
     %printf("MAX ALTITUDE - > %d m", max(altitude));
     %---<SCORE COMPUTED>---%
 
