@@ -23,6 +23,7 @@ function [score] = rocketModel(input)
     altitude = zeros(1,2000);
     velocity = zeros(1,2000);
     acceleration = zeros(1,2000);
+    ttw = zeros(1,2000); %thrust to weight ratio
     liftoff = true;
     
     %INNITIALIZE FLIGHT STRESS MONITORS
@@ -124,6 +125,7 @@ function [score] = rocketModel(input)
         
         %---<UPDATE POSITION>---%
         acceleration(i) = (motorForce - drag(tD, airDensity, velocity(i-1)) - mCur*9.81)/mCur;
+        ttw(i) = motorForce/mCur
 
         
         if(acceleration(i)>0)
@@ -159,8 +161,16 @@ function [score] = rocketModel(input)
         stressXt3(i) = ((motorForce)*acceleration(i)) / ((pi/4)*(tD^2 - (tD-tT)^2)); % axial stress on 
         stressYt3(i) = (thrustC(i,4)* (fuelDia-2*chamberT))/(2*chamberT);
         
-         i = i + 1;
-        if(i>2000)
+        i = i + 1;
+        
+        if(dt*i > 5 && ttw(i-1)<1 && dt*i < burnTime) %if at 5s in and takeoff has not occured abort and return a terrible score
+            score = 1/ttw(i-1) * 10^8;
+            "low ttw"
+            return
+        end
+        
+        
+        if(i>2000) %Prevents over indexing the main arrays
             break
         end
 
