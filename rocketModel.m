@@ -14,12 +14,12 @@ function [score] = rocketModel(input)
     fuelDia = input(9); %Fuel core max diameter
     fuelLength = input(10); %Length of ABS fuel core
     m_ox = input(11); %Oxidizer mass flow rate
-    nozzleThroat = input(12); %Nozzle throat diameter
-    nozzleExit = input(13); %Nozzle exit diameter
-    chamberT = input(14); %Fuel chamber thickness 
+    %nozzleThroat = input(12); %Nozzle throat diameter
+    %nozzleExit = input(13); %Nozzle exit diameter
+    chamberT = input(12); %Fuel chamber thickness 
     
 
-    dt = 0.5; %[s] integration timestep
+    dt = 2; %[s] integration timestep
     altitude = zeros(1,2000);
     velocity = zeros(1,2000);
     acceleration = zeros(1,2000);
@@ -40,7 +40,7 @@ function [score] = rocketModel(input)
     L = 1; %[m] nosecone length
 
     %CALCULATE MOTOR THRUST CURVE AND OPTIMAL OXIDIZER AMOUNT ALSO T2 LEN
-    thrustC = motorThrust(fuelCore, fuelDia, fuelLength, m_ox, nozzleThroat, nozzleExit, dt);
+    thrustC = motorThrust(fuelCore, fuelDia, fuelLength, m_ox, dt);
     burnTime = max(thrustC(:,1))
 
     oxMass = burnTime*m_ox; %[kg] optimal mass of oxidiser
@@ -52,7 +52,7 @@ function [score] = rocketModel(input)
     nozzleM = 0.5; %[kg]
 
     rhoAl =1300; %[kg/m^3]
-    yeildAl = 1300*10^6; %[N/m^2] Carbon yeild stress UPDATE, SWAPPED TO CARBON
+    yeildAl = 1300*10^6*sind(45); %[N/m^2] Carbon yeild stress UPDATE, SWAPPED TO CARBON
     sf = 0.99; %safety factor
     yeildAl = yeildAl*sf;
     rhoABS = 1052;%[kg/m^3]
@@ -112,8 +112,8 @@ function [score] = rocketModel(input)
     
     %BEGIN TIME LOOP%
     i = 2;
-    while(i<500)
 
+    while(~(i>10 && velocity(i-1)<0))
         
         if(dt*i > burnTime)
             motorForce = 0;
@@ -125,7 +125,7 @@ function [score] = rocketModel(input)
         
         %---<UPDATE POSITION>---%
         acceleration(i) = (motorForce - drag(tD, airDensity, velocity(i-1)) - mCur*9.81)/mCur;
-        ttw(i) = motorForce/mCur
+        ttw(i) = motorForce/mCur;
 
         
         if(acceleration(i)>0)
@@ -152,13 +152,13 @@ function [score] = rocketModel(input)
         end
         
         %---<CALCULATE STRESSES>---%
-        stressXt1(i) = (((noseconeMass + parachuteM + t1M + payloadM)*(acceleration(i))) + drag(tD, 1.2, velocity(i))) / ((pi/4)*(tD^2 - (tD-tT)^2)); %calculate stress on tube due to mass acceleration and nosecone drag
+        stressXt1(i) = (((noseconeMass + parachuteM + t1M + payloadM)*(acceleration(i))) + drag(tD, 1.2, velocity(i))) / ((pi/4)*(tD^2 - (tD-2*tT)^2)); %calculate stress on tube due to mass acceleration and nosecone drag
         stressYt1(i) = 0;
 
-        stressXt2(i) = ((m_ox*dt*i + 2*bulkheadMass + t2M + avionicsM)*acceleration(i) + stressXt1(i)) / ((pi/4)*(tD^2 - (tD-tT)^2)); %Calculate stress X stress on oxidizer tube 
+        stressXt2(i) = ((m_ox*dt*i + 2*bulkheadMass + t2M + avionicsM)*acceleration(i) + stressXt1(i)) / ((pi/4)*(tD^2 - (tD-2*tT)^2)); %Calculate stress X stress on oxidizer tube 
         stressYt2(i) = (pNox_20c * (tD-2*tT))/(2*tT); %hoop stress on tank walls from pressurized oxidizer
 
-        stressXt3(i) = ((motorForce)*acceleration(i)) / ((pi/4)*(tD^2 - (tD-tT)^2)); % axial stress on 
+        stressXt3(i) = ((motorForce)*acceleration(i)) / ((pi/4)*(tD^2 - (tD-2*tT)^2)); % axial stress on 
         stressYt3(i) = (thrustC(i,4)* (fuelDia-2*chamberT))/(2*chamberT);
         
         i = i + 1;

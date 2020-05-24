@@ -3,7 +3,7 @@
 %The innitial parameters represents the innitial rocket design for the
 %optimizer to start with, this design should produce a rocket that can fly
 %to a non-trivial altitude and is structurally sound 
-innitialParams = [0.5, 0.01, 0.5, 0.032, 0.032, 0.5, 0.002, 0.37, 0.4, 0.4, 2, 0.05];
+innitialParams = [0.5, 0.0, 0.5, 0.032, 0.032, 0.5, 0.002, 0.37, 0.4, 0.4, 3, 0.040];
 
 %---<UPPER BOUNDS>---%
 %The upper bounds represent the maximum values any parameters are allowed

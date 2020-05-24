@@ -1,4 +1,4 @@
-function output = motorThrust(initialD,finalD, Lp, m_ox, throatR, exitR, dt)
+function output = motorThrust(initialD,finalD, Lp, m_ox, dt)
 
     % Variables for Comparison to Research Paper (comment or uncomment)
     %https://pdfs.semanticscholar.org/b004/f9574f56c810273f5bbf7e494ad3598abdae.pdf
@@ -6,8 +6,8 @@ function output = motorThrust(initialD,finalD, Lp, m_ox, throatR, exitR, dt)
     % initialD = 0.025;    %[m]    Initial diameter of combustion port, pre-burn 
     % Lp = 0.57;           %[m]    Length of the combustionthrea port 
     % m_ox = 0.304;        %[kg/s] Oxidizer flow rate (from HTPB vs ABS paper)
-    % throatR = 0.0082;    %[m]    Radius of the nozzle throat
-    % exitR = 0.0172;      %[m]    Radius of the nozzle exit 
+     throatR = 0.0082;    %[m]    Radius of the nozzle throat
+     exitR = 0.0172;      %[m]    Radius of the nozzle exit 
 
 
 
@@ -23,11 +23,11 @@ function output = motorThrust(initialD,finalD, Lp, m_ox, throatR, exitR, dt)
     R = 8314.41/29.19;   %[J/kmol*K] Universal gas constant divided by MM of combustion products
     G_tot = [];          %Initialize G_tot array to store the instantaneous G values
     
-    time = zeros(1,500);
-    thrust = zeros(1,500);
-    mBurned = zeros(1,500);
-    Pc = zeros(1, 500);
-    pressure_Chamber_Pa = zeros(1, 500);
+    time = zeros(1,2000);
+    thrust = zeros(1,2000);
+    mBurned = zeros(1,2000);
+    Pc = zeros(1, 2000);
+    pressure_Chamber_Pa = zeros(1, 2000);
 
 
     %% Begin Simulation 
