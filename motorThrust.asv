@@ -40,9 +40,11 @@ function output = motorThrust(initialD,finalD, Lp, m_ox, dt)
     %---<USE MOTOR DATA TO ESTIMATE MAX FLOW RATE (pressure fed)>---%
 
     injectorArea = pi*(0.075)^2;
-    vFlow = m_ox/injectorArea
+    vFlow = sqrt((2*deltaP)/rhoNoxL_20c);
 
-    
+    PcGuess = pNox_20c + (vFlow^2 * rhoNoxL_20c)/2;
+
+    fRMax = vFlow * injectorArea
 
 
     %% Begin Simulation 
@@ -67,7 +69,6 @@ function output = motorThrust(initialD,finalD, Lp, m_ox, dt)
 
     %Calculate the total propellant mass flow
     m_tot = m_ox + m_fuel; 
-    
 
     %Caculate the OF ratio 
     OF_ratio(j) = m_ox/m_fuel; 
@@ -84,14 +85,6 @@ function output = motorThrust(initialD,finalD, Lp, m_ox, dt)
     gamma = 1.1708;     %Ratio of specific heats (Cp and Cv idk which order) from RPA
     molMass = 0.002919; %[kg/mol] Average molar mass of the output exhaust
     Tc = 3301.8;        %[K] Flame temperature (also used as combustion chamber stagnation temp)
-    
-    %
-    if(firstRun)
-        PcGuess =   pNox_20c - (vFlow^2 * rhoNoxL_20c)/2
-        A_t = (c_star*m_tot)/PcGuess;
-        A_e = 2 * A_t;
-        firstRun = false;
-    end
 
     %Values from RPA for mini-hybrid  (uncomment or comment)
     % c_star = 1559;      %[m/s] 

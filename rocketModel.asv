@@ -111,11 +111,10 @@ function [score] = rocketModel(input)
     wetMass = dryMass + oxMass + fuelM; %calculate the fully loaded weight of the craft
     
     %---<USE MOTOR DATA TO ESTIMATE MAX FLOW RATE (pressure fed)>---%
-    maxChamberP = max(thrustC(:,4)); 
+    maxChamberP = max(thrust(:,4)); 
     deltaP = pNox_20c - maxChamberP; %Delta P for bernoulli calc
-    vFlow = sqrt((2*deltaP)/rhoNoxL_20c);
-    injectorArea = pi*(0.075)^2;
-    fRMax = vFlow * injectorArea
+    
+    
     %BEGIN TIME LOOP%
     i = 2;
 
