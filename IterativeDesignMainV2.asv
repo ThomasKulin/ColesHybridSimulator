@@ -1,8 +1,6 @@
 %% ENPH 455 Hybrid Rocket Motor Design Project (Iterative Code)
 %Written by: Cole Mero 
 %October 29, 2019
-%Modified by: Thomas Kulin
-%October 2, 2020
 
 clear all
 %% Initiate Variables for Simulation 
@@ -19,7 +17,7 @@ clear all
 %Variables for Mini-Hybrid Prediction (comment or uncomment) 
 finalD = 0.1143;     %[m]    Maximum possible diameter of the motor after completed burn 
 initialD = 0.0635;  %[m]    Initial diameter of combustion port, pre-burn 
-Lp = 0.6;          %[m]    Length of the combustion port 
+Lp = 0.3;          %[m]    Length of the combustion port 
 m_ox = 1;       %[kg/s] Oxidizer flow rate (experimentally measured)
 throatR = 0.018415;    %[m]    Radius of the nozzle throat
 exitR = 0.041275;     %[m]    Radius of the nozzle exit 
@@ -46,7 +44,7 @@ j = 1;
 while currentD < finalD
 
 %Calculate the regression rate using custom RegRate function 
-[regRate, m_fuel, G_tot(j)] = RegRate(m_ox, currentD, rho, Lp); 
+[regRate, m_fuel, G_tot(j)] = HelixRegRate(m_ox, currentD, rho, Lp); 
  
 %Calculate the new combustion port diameter
 currentD = currentD + 2*regRate*dt %Unmuted to check progress/speed of sim

@@ -1,24 +1,17 @@
-%% ENPH 455 Hybrid Rocket Motor Design Project (Iterative Code)
-%Written by: Cole Mero 
-%October 29, 2019
-%Modified by: Thomas Kulin
+%% Helical Port Rocket simulator (Iterative Code)
+%Written by: Thomas Kulin
 %October 2, 2020
 
 clear all
 %% Initiate Variables for Simulation 
 
-% Variables for Comparison to Research Paper (comment or uncomment)
-%https://pdfs.semanticscholar.org/b004/f9574f56c810273f5bbf7e494ad3598abdae.pdf
-% finalD = 0.041;      %[m]    Maximum possible diameter of the motor after completed burn
-% initialD = 0.025;    %[m]    Initial diameter of combustion port, pre-burn 
-% Lp = 0.57;           %[m]    Length of the combustion port 
-% m_ox = 0.304;        %[kg/s] Oxidizer flow rate (from HTPB vs ABS paper)
-% throatR = 0.0082;    %[m]    Radius of the nozzle throat
-% exitR = 0.0172;      %[m]    Radius of the nozzle exit 
 
-%Variables for Mini-Hybrid Prediction (comment or uncomment) 
+%Variables for Hybrid Prediction  
 finalD = 0.1143;     %[m]    Maximum possible diameter of the motor after completed burn 
 initialD = 0.0635;  %[m]    Initial diameter of combustion port, pre-burn 
+r_helix = 0;  % [cm] Radius of helix curvature
+P_helix = 0;  % [cm] helix pitch distance
+N_helix = 0;  % number of helical port turns
 Lp = 0.6;          %[m]    Length of the combustion port 
 m_ox = 1;       %[kg/s] Oxidizer flow rate (experimentally measured)
 throatR = 0.018415;    %[m]    Radius of the nozzle throat
@@ -35,24 +28,34 @@ lamda = 0.97;        %Nozzle efficiency
 Pa = 101325;         %[Pa] Ambient pressure 
 R = 8314.41/29.19;   %[J/kmol*K] Universal gas constant divided by MM of combustion products
 dt = 0.1;            %[s] Differential time step to be used for each iteration
-G_tot = [];          %Initialize G_tot array to store the instantaneous G values
 
 
 %% Begin Simulation 
-currentD = initialD; %To begin set the diameter to initial (unburnt) diameter
-
+r_0 = initialD/2;
+r_L = r_0;
+r_final = finalD/2;
 j = 1;
 
-while currentD < finalD
+while r_L < r_final
 
-%Calculate the regression rate using custom RegRate function 
-[regRate, m_fuel, G_tot(j)] = RegRate(m_ox, currentD, rho, Lp); 
+[regRate, m_fuel, m_total] = HelixRegRate(m_ox, r_L, rho, Lp); 
  
-%Calculate the new combustion port diameter
-currentD = currentD + 2*regRate*dt %Unmuted to check progress/speed of sim
+r_L = r_L + 2*regRate*dt %mean of longitudinal port radius [cm]. may be wrong as per eqn. 35
 
-%Calculate the total propellant mass flow
-m_tot = m_ox + m_fuel; 
+G_total = m_total/(pi*r_L^2);  %total mass flux [kg/(m^2*s)]
+G_ox = m_ox
+
+mu_ox = 1.47E-5;  % absolute viscosity of N2O [(N*s)/m^2]. this value is for 20 C, but increases significantly with higher temperature
+R_e = G_total * Lp / mu_ox; %longitudinal Reynolds number
+
+C_f_straight = 0.074/R_e^(1/5);  %straight port skin friction coefficient
+
+R_c = r_helix * (1 + (P_helix/(2*pi*r_helix))^2);  %helix radius of curvature [cm]
+R_c_eff = R_c*sqrt(1 + pi/2 * ((2*r_L-2*r_0)/R_c)^2);  %effective helix radius of curvature [cm] (accounts for change in port radius) 
+
+A_C_f = 1 + 0.0075/C_f_straight * sqrt(2*r_L/(2*R_c_eff));  %radial wall blowing amplification factor
+A_beta = (1 + 2*(2*pi*N)^2 * ;  %radial wall blowing amplification factor
+
 
 %Caculate the OF ratio 
 OF_ratio(j) = m_ox/m_fuel; 
