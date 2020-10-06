@@ -14,7 +14,7 @@
 
 %% Function to Calculate Instantaneous Regression Rate + Fuel Mass Flow Rate
 
-function [regRate, m_fuel, G_tot] = RegRate(m_ox, currentD, rho, Lp)
+function [regRate, m_fuel, G_tot] = RegRate(m_ox, currentD, rho, Lp, AmplificationFactor)
 
 % a = 2.066*10^(-5);   %[kg^(-n)m^(1+2n-m)s^(n-1)] (reference value found on pg 385 of SPAD) 
 % n = 0.75;              %(reference value found on pg 385 of SPAD) 
@@ -40,7 +40,7 @@ No = 0.8;
 Mo = -0.20;
 
 Gox = (m_ox/currentA); %[kg/m^2*s] Oxidizer flux in units for the regression rate calc;
-regRate = Ao*(Gox^No)*(Lp^Mo); %[m/s] Regression rate calculation (eqn 7.36 from SPAD pg 385)
+regRate = Ao*(Gox^No)*(Lp^Mo) * AmplificationFactor; %[m/s] Regression rate calculation (eqn 7.36 from SPAD pg 385)
 
 m_fuel = regRate*rho*(pi*currentD*Lp); %[kg/s] Instantaneous fuel mass flow rate
 Gfuel = m_fuel/currentA; %[kg/m^2*s] Instantaneous fuel mass flux 

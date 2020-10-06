@@ -55,7 +55,7 @@ R_c = r_helix * (1 + (P_helix/(2*pi*r_helix))^2);  %helix radius of curvature [c
 R_c_eff = R_c*sqrt(1 + pi/2 * ((2*r_L-2*r_0)/R_c)^2);  %effective helix radius of curvature [cm] (accounts for change in port radius) 
 
 A_C_f = 1 + 0.0075/C_f_straight * sqrt(2*r_L/(2*R_c_eff));  %radial wall blowing amplification factor
-A_beta = (1 + 2*(2*pi*N)^2 * OF_ratio(j)^2 * )^0.77;  %radial wall blowing amplification factor
+A_beta = (1 + 2*(2*pi*N)^2 * OF_ratio(j)^2 )^0.77;  %radial wall blowing amplification factor
 
 
 %Using the OF ratio, consult paper

@@ -7,21 +7,13 @@
 clear all
 %% Initiate Variables for Simulation 
 
-% Variables for Comparison to Research Paper (comment or uncomment)
-%https://pdfs.semanticscholar.org/b004/f9574f56c810273f5bbf7e494ad3598abdae.pdf
-% finalD = 0.041;      %[m]    Maximum possible diameter of the motor after completed burn
-% initialD = 0.025;    %[m]    Initial diameter of combustion port, pre-burn 
-% Lp = 0.57;           %[m]    Length of the combustion port 
-% m_ox = 0.304;        %[kg/s] Oxidizer flow rate (from HTPB vs ABS paper)
-% throatR = 0.0082;    %[m]    Radius of the nozzle throat
-% exitR = 0.0172;      %[m]    Radius of the nozzle exit 
 
 %Variables for Mini-Hybrid Prediction (comment or uncomment) 
 finalD = 0.1143;     %[m]    Maximum possible diameter of the motor after completed burn 
 initialD = 0.0635;  %[m]    Initial diameter of combustion port, pre-burn 
-Lp = 0.6;          %[m]    Length of the combustion port 
+Lp = 0.60;          %[m]    Length of the combustion port 
 m_ox = 1;       %[kg/s] Oxidizer flow rate (experimentally measured)
-throatR = 0.018415;    %[m]    Radius of the nozzle throat
+throatR = 0.015;    %[m]    Radius of the nozzle throat
 exitR = 0.041275;     %[m]    Radius of the nozzle exit 
 
 %Caclulated initial variables for simulation 
@@ -31,14 +23,15 @@ epsilon = A_e/A_t;    %Nozzle area expansion ratio
 
 rho = 975;           %[kg/m^3]  Average density of ABS plastic 
 m_fuel = 0;          %[kg/s]  Fuel flow rate (intialized to 0 for simulation)
-lamda = 0.97;        %Nozzle efficiency 
+lamda = 0.96;        %Nozzle efficiency 
 Pa = 101325;         %[Pa] Ambient pressure 
-R = 8314.41/29.19;   %[J/kmol*K] Universal gas constant divided by MM of combustion products
-dt = 0.1;            %[s] Differential time step to be used for each iteration
+R = 8314.41/25.94;   %[J/kmol*K] Universal gas constant divided by MM of combustion products
 G_tot = [];          %Initialize G_tot array to store the instantaneous G values
 
 
 %% Begin Simulation 
+dt = 0.5;            %[s] Differential time step to be used for each iteration
+AmplificationFactor = 2.0;  % Regression rate amplification factor to shittily simulate higher regression geometries
 currentD = initialD; %To begin set the diameter to initial (unburnt) diameter
 
 j = 1;
@@ -46,13 +39,15 @@ j = 1;
 while currentD < finalD
 
 %Calculate the regression rate using custom RegRate function 
-[regRate, m_fuel, G_tot(j)] = RegRate(m_ox, currentD, rho, Lp); 
- 
+[regRate, m_fuel, G_tot(j)] = RegRate(m_ox, currentD, rho, Lp, AmplificationFactor); 
+rdot(j) = regRate;
+
 %Calculate the new combustion port diameter
 currentD = currentD + 2*regRate*dt %Unmuted to check progress/speed of sim
 
 %Calculate the total propellant mass flow
 m_tot = m_ox + m_fuel; 
+mdot_fuel(j) = m_fuel;
 
 %Caculate the OF ratio 
 OF_ratio(j) = m_ox/m_fuel; 
@@ -64,17 +59,11 @@ OF_ratio(j) = m_ox/m_fuel;
 %flame temp, ratio of specific heats, and molecular mass of the
 %combustion products
 
-%Values from RPA for research paper (uncomment or comment)
-c_star = 1605;      %[m/s] 
-gamma = 1.1708;     %Ratio of specific heats (Cp and Cv idk which order) from RPA
-molMass = 0.002919; %[kg/mol] Average molar mass of the output exhaust
-Tc = 3301.8;        %[K] Flame temperature (also used as combustion chamber stagnation temp)
- 
-%Values from RPA for mini-hybrid  (uncomment or comment)
-% c_star = 1559;      %[m/s] 
-% gamma = 1.2015;     %Ratio of specific heats (Cp and Cv idk which order) from RPA
-% molMass = 0.002992; %[kg/mol] Average molar mass of the output exhaust
-% Tc = 3321.8;        %[K] Flame temperature (also used as combustion chamber stagnation temp)
+%Values from RPA 
+c_star = 1583;      %[m/s] 
+gamma = 1.191;     %Ratio of specific heats (Cp and Cv idk which order) from RPA
+molMass = 0.02594; %[kg/mol] Average molar mass of the output exhaust
+Tc = 3262.8;        %[K] Flame temperature (also used as combustion chamber stagnation temp)
 
 %Calcualte the pressure in combustion chamber in Pascals and PSI
 pressure_Chamber_Pa(j) =  c_star*m_tot/A_t; %[Pa]
@@ -113,12 +102,12 @@ j = j+1;
 end 
 
 %% Plot the Simulation Results
-
+Pc_PSI = Pc /6894.76;
 figure(1)
-plot(time+1, Pc) %Shift curve one second right for viewing purposes
+plot(time+1, Pc_PSI) %Shift curve one second right for viewing purposes
 title("Combustion Chamber Pressure vs Time")
 xlabel("Time [s]")
-ylabel("Chamber Pressure [Pa]")
+ylabel("Chamber Pressure [PSI]")
 % axis([0,12,0,4e6]) %Uncomment for research paper
 grid on
 
